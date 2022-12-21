@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<style type="text/css">
+		body {
+			margin: 0;
+		}
+		#app {
+			width: 800px;
+			margin: 0 auto;
+		}
+	</style>
+ 	<!-- <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet" /> -->
+</head>
+<body>
+	
+	<!-- <p>要有至少一个中文字符，不然video中的中文会乱码</p> -->
+	<div id="app"></div>
+	<div id="app1"></div>
+	
+	<!-- <script type="text/javascript" src="./videoControl.js"></script> -->
+	<script type="text/javascript" src="./static/videoControl.js"></script>
+	<script type="text/javascript">
+		
+		let video = new Video('./static/media/http.mp4', document.getElementById('app'), { width: '800px', margin: '100px auto' })
+		let video1 = new Video('./static/media/css.mp4', document.getElementById('app1'), { width: '800px', margin: '100px auto' })
+		
+		// let video = new Video('./media/http.mp4', document.getElementById('app'), { width: '800px', margin: '100px auto' })
+		// let video1 = new Video('./media/css.mp4', document.getElementById('app1'), { width: '800px', margin: '100px auto' })
+
+	</script>
+
+
+
+
+	<!-- <video
+		id="my-video"
+		class="video-js"
+		controls
+		preload="auto"
+		width="640"
+		height="264"
+		data-setup="{}"
+	>
+		<source src="./media/css.mp4" type="video/mp4" />
+		<p class="vjs-no-js">
+		To view this video please enable JavaScript, and consider upgrading to a
+		web browser that
+		<a href="https://videojs.com/html5-video-support/" target="_blank"
+			>supports HTML5 video</a
+		>
+		</p>
+	</video>
+	<script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script> -->
+
+
+</body>
+</html>
