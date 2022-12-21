@@ -86,16 +86,36 @@ class Video {
 			}
 
 			.video_control_time {
-				display: flex;
+				display: grid;
 				align-items: center;
-				justify-content: space-between;
+				grid-template-areas: 'current time duration';
+				grid-template-columns: auto 1fr auto;				
 				width: 100%;
 				height: 20px;
 			}
 			.video_time {
-				height: 20px;
-				line-height: 20px;
+				grid-area: time;
+				position: relative;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 100%;
+				height: 100%;
+				cursor: pointer;
+			}
+			.video_time-txt {
+				min-width: 48px;
+				height: 12px;
+				line-height: 12px;
 				margin: 0 10px;
+				font-size: 12px;
+				text-align: center;
+			}
+			.video_time-txt.current_time {
+				grid-area: current;
+			}
+			.video_time-txt.duration_time {
+				grid-area: duration;
 			}
 			.video_time_bar {
 				position: relative;
@@ -104,6 +124,17 @@ class Video {
 				border-radius: 8px;
 				background-color: rgba(255, 255, 255, .3);	
 				cursor: pointer;
+				transition: height .3s linear;
+			}
+			.video_time_bar.hover {
+				height: 6px;
+			}
+			.video_time_bar.hover .video_time_cur {
+				display: block;
+				height: 6px;
+			}
+			.video_time_bar.hover .video_time_dot {
+				top: -2px;
 			}
 			.video_time_bg {
 				position: absolute;
@@ -123,16 +154,40 @@ class Video {
 			.video_volume_dot {
 				box-sizing: border-box;
 				position: absolute;
-				right: -3px;
+				right: -6px;
 				top: -3px;
 				width: 10px;
 				height: 10px;
 				border-radius: 50%;
 				background: #fff;
+				z-index: 2;
+				transition: top .3s linear;
 			}
 			.video_time_dot:hover,
 			.video_volume_dot:hover {
 				border: 1px solid #00bcd4;
+			}
+			.video_time_cur {
+				display: none;
+				position: absolute;
+				top: 0;
+				width: 1px;
+				height: 4px;
+				background-color: #000;
+				z-index: 1;
+				transition: height, top .3s linear;
+			}
+			.video_time_cur-txt {
+				position: absolute;
+				top: -24px;
+				transform: translateX(-50%);
+				font-size: 12px;
+				color: #fff;
+				background-color: rgba(0, 0, 0, .4);
+				line-height: initial;
+				padding: 2px 4px;
+				border-radius: 4px;
+				user-select: none;
 			}
 			.video_control_bottom {
 				display: flex;
@@ -386,14 +441,19 @@ class Video {
 		videoBottom.classList.add('video_control');
 		videoBottom.innerHTML = `
 			<div class="video_control_time">
-				<span class="video_time current_time">${this.video.currentTime}</span>
-				<div class="video_time_bar">
-					<div class="video_time_bg"></div>
-					<div class="video_time_progress">
-						<div class="video_time_dot"></div>
+				<span class="video_time-txt current_time">${this.video.currentTime}</span>
+				<div class="video_time">
+					<div class="video_time_bar">
+						<div class="video_time_bg"></div>
+						<div class="video_time_progress">
+							<div class="video_time_dot"></div>
+						</div>
+						<div class="video_time_cur">
+							<div class="video_time_cur-txt">00:00</div>
+						</div>
 					</div>
 				</div>
-				<span class="video_time duration_time">${this.videoDuration}</span>
+				<span class="video_time-txt duration_time">${this.videoDuration}</span>
 			</div>
 			<div class="video_control_bottom">
 				<div class="video_control_left">
@@ -488,15 +548,17 @@ class Video {
 	}
 	// 视频进度条事件
 	timeBarEvent() {
+		let timeWrap = this.parent.getElementsByClassName('video_time')[0];
 		let timeBar = this.parent.getElementsByClassName('video_time_bar')[0];
 		let timeProgress = this.parent.getElementsByClassName('video_time_progress')[0];
 		let timeDot = this.parent.getElementsByClassName('video_time_dot')[0];
+		let timeCur = this.parent.getElementsByClassName('video_time_cur')[0];
+		let timeCurTxt = this.parent.getElementsByClassName('video_time_cur-txt')[0];
 		timeBar.addEventListener('click', (e) => {
 			e.stopPropagation();
-			if (e.target !== timeDot) {
-				let pre = e.offsetX / timeBar.offsetWidth;
-				this.video.currentTime = pre * this.video.duration;
-			}
+			let barLeft = timeBar.getBoundingClientRect().left;
+			let pre = (e.clientX - barLeft) / timeBar.offsetWidth;
+			this.video.currentTime = pre * this.video.duration;
 		});
 		// 进度条拖动
 		timeDot.addEventListener('mousedown', (e) => {
@@ -528,7 +590,26 @@ class Video {
 			}
 			document.addEventListener('mousemove', move);
 			document.addEventListener('mouseup', up);
-		})
+		});
+		
+		timeWrap.addEventListener('mouseenter', (e) => {
+			timeBar.classList.add('hover');
+			let { left: barLeft, width: barWidth } = timeBar.getBoundingClientRect();
+			let move = (e) => {
+				timeCur.style.left = `${e.clientX - barLeft}px`
+				let pre = (e.clientX - barLeft) / barWidth;
+				if (pre < 0) pre = 0;
+				if (pre > 100) pre = 100;
+				timeCurTxt.innerText = formatTime(pre * this.videoDuration);
+			}
+			let leave = (e) => {
+				timeBar.classList.remove('hover');
+				timeBar.removeEventListener('mousemove', move);
+				timeWrap.removeEventListener('mouseleave', leave);
+			}
+			timeBar.addEventListener('mousemove', move);
+			timeWrap.addEventListener('mouseleave', leave);
+		});
 	}
 	// control按钮事件
 	videoControlEvent() {
@@ -713,8 +794,8 @@ class Video {
 	}
 	// 视频事件
 	bindVideoEvent() {
-		let curTimedom = this.parent.getElementsByClassName('video_time current_time')[0];
-		let duraTimedom = this.parent.getElementsByClassName('video_time duration_time')[0];
+		let curTimedom = this.parent.getElementsByClassName('video_time-txt current_time')[0];
+		let duraTimedom = this.parent.getElementsByClassName('video_time-txt duration_time')[0];
 		let timeBg = this.parent.getElementsByClassName('video_time_bg')[0];
 		
 		let volumeProgress = this.parent.getElementsByClassName('video_volume_progress')[0];
@@ -859,7 +940,7 @@ class Video {
 	}
 	// 视频时间变化
 	videoTimeChange(time) {
-		let curTimedom = this.parent.getElementsByClassName('video_time current_time')[0];
+		let curTimedom = this.parent.getElementsByClassName('video_time-txt current_time')[0];
 		let timeProgress = this.parent.getElementsByClassName('video_time_progress')[0];
 
 		curTimedom.innerText = formatTime(time);
