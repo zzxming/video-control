@@ -12,7 +12,7 @@ class Video {
 			...style
 		};
 		this.controllerShow = true;	// 是否显示控制栏
-		this.isFull = false;	// 是否全屏
+		this.isFull = false;	// 是否网页全屏
 		this.title = src.replace(/(.*\/)*([^.]+).*/ig, '$2');
 		this.isMute = false;	// 是否静音
 		this.ended = false;		// 是否播放完毕
@@ -441,7 +441,7 @@ class Video {
 		videoBottom.classList.add('video_control');
 		videoBottom.innerHTML = `
 			<div class="video_control_time">
-				<span class="video_time-txt current_time">${this.video.currentTime}</span>
+				<span class="video_time-txt current_time">${formatTime(this.video.currentTime)}</span>
 				<div class="video_time">
 					<div class="video_time_bar">
 						<div class="video_time_bg"></div>
@@ -453,7 +453,7 @@ class Video {
 						</div>
 					</div>
 				</div>
-				<span class="video_time-txt duration_time">${this.videoDuration}</span>
+				<span class="video_time-txt duration_time">${formatTime(this.videoDuration)}</span>
 			</div>
 			<div class="video_control_bottom">
 				<div class="video_control_left">
@@ -473,6 +473,7 @@ class Video {
 							<div class="control_space"></div>
 						</div>
 					</div>
+					${ document.pictureInPictureEnabled ? '<div class="video_control_btn inpic-btn">画</div>' : '' }
 					<div class="video_control_btn rate-btn">
 						<div class="rate_list">
 							<div class="rate_item" data-rate="0.5">x0.5</div>
@@ -620,6 +621,7 @@ class Video {
 		let fullBtn = this.parent.getElementsByClassName('video_control_btn full-btn')[0];
 		let fullBrowserBtn = this.parent.getElementsByClassName('video_control_btn full-browser-btn')[0];
 		let volumeBtn = this.parent.getElementsByClassName('video_control_btn volume-btn')[0];
+		let inpicBtn = this.parent.getElementsByClassName('video_control_btn inpic-btn')[0];
 
 		// 播放按钮
 		playBtn.addEventListener('click', (e) => {
@@ -644,6 +646,19 @@ class Video {
 			this.root.style.width = `${window.innerWidth}px`;
 			this.root.style.height = `${window.innerHeight}px`;
 		}).bind(this);
+		// 画中画按钮
+		inpicBtn.addEventListener('click', (e) => {
+			if (!document.pictureInPictureEnabled) {
+				alert('浏览器不支持画中画播放')
+				return;
+			}
+			if (!document.pictureInPictureElement) {
+				this.video.requestPictureInPicture();
+			}
+			else {
+				document.exitPictureInPicture();
+			}
+		});
 		// 全屏按钮
 		fullBtn.addEventListener('click', (e) => {
 			e.stopPropagation();
@@ -713,7 +728,8 @@ class Video {
 		let controlTimer = 0;
 		// 鼠标移动事件节流
 		let throttleMousemove = throttle((e) => {
-			if (e.path.includes(controlWrapper)) {
+			let path = e.path || e.composedPath();
+			if (path.includes(controlWrapper)) {
 				return;
 			}
 			clearTimeout(maskTimer);
